@@ -1,0 +1,346 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API для управления подписками пользователя и подсчёта стоимости.",
+        "title": "Effective Mobile Subscription API",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/cost/{user_id}": {
+            "get": {
+                "description": "Возвращает сумму подписок пользователя за указанный период с возможностью фильтрации по названию сервиса",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cost"
+                ],
+                "summary": "Суммарная стоимость подписок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пользователя",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата начала (формат YYYY-MM)",
+                        "name": "start",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата окончания (формат YYYY-MM)",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Название сервиса (опционально)",
+                        "name": "service_name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Общий итог по подпискам",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CostResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибки валидации параметров запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при подсчёте стоимости",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/subscribe": {
+            "post": {
+                "description": "Добавляет новую подписку с указанием user_id, service_name, price и start_date",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscribes"
+                ],
+                "summary": "Добавить подписку",
+                "parameters": [
+                    {
+                        "description": "Данные подписки",
+                        "name": "subscribe",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/base.Subscribe"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ID новой подписки",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации или форматирования запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "405": {
+                        "description": "Метод не разрешен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при добавлении подписки",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/subscribe/{id}": {
+            "get": {
+                "description": "Возвращает подписку по уникальному ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscribes"
+                ],
+                "summary": "Получить подписку по ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID подписки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/base.Subscribe"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при получении подписки",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Удаляет подписку по указанному ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscribes"
+                ],
+                "summary": "Удалить подписку по ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID подписки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ID удаленной подписки",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "405": {
+                        "description": "Метод не разрешен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при удалении подписки",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/subscribes/{user_id}": {
+            "get": {
+                "description": "Получить все подписки по user_id, опционально фильтруя по service_name",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscribes"
+                ],
+                "summary": "Получить подписки пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пользователя",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Название сервиса (опционально)",
+                        "name": "service_name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/base.Subscribe"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Подписки не найдены",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при получении подписок",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "base.Subscribe": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "description": "Опционально дата окончания подписки",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "price": {
+                    "description": "Стоимость месячной подписки в рублях",
+                    "type": "integer"
+                },
+                "service_name": {
+                    "description": "Название сервиса, предоставляющего подписку",
+                    "type": "string"
+                },
+                "start_date": {
+                    "description": "Дата начала подписки (месяц и год)",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "ID пользователя в формате UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.CostResponse": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "description": "Общая сумма стоимости подписок",
+                    "type": "integer",
+                    "example": 1500
+                }
+            }
+        }
+    }
+}

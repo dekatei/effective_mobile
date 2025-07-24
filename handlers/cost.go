@@ -10,17 +10,37 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// CostRequest представляет запрос на подсчет стоимости подписок
 type CostRequest struct {
-	UserID      string `json:"user_id,omitempty"`
+	// ID пользователя
+	UserID string `json:"user_id,omitempty"`
+	// Название сервиса (необязательно)
 	ServiceName string `json:"service_name,omitempty"`
-	StartDate   string `json:"start_date"` // формат YYYY-MM
-	EndDate     string `json:"end_date"`   // формат YYYY-MM
+	// Дата начала в формате YYYY-MM
+	StartDate string `json:"start_date" example:"01-2024"`
+	// Дата окончания в формате YYYY-MM
+	EndDate string `json:"end_date" example:"07-2024"`
 }
 
+// CostResponse представляет ответ с суммарной стоимостью
 type CostResponse struct {
-	Total int `json:"total"`
+	// Общая сумма стоимости подписок
+	Total int `json:"total" example:"1500"`
 }
 
+// CostSummary возвращает суммарную стоимость подписок за период для пользователя
+// @Summary Суммарная стоимость подписок
+// @Description Возвращает сумму подписок пользователя за указанный период с возможностью фильтрации по названию сервиса
+// @Tags cost
+// @Produce json
+// @Param user_id path string true "ID пользователя"
+// @Param start query string true "Дата начала (формат YYYY-MM)"
+// @Param end query string true "Дата окончания (формат YYYY-MM)"
+// @Param service_name query string false "Название сервиса (опционально)"
+// @Success 200 {object} CostResponse "Общий итог по подпискам"
+// @Failure 400 {object} map[string]string "Ошибки валидации параметров запроса"
+// @Failure 500 {object} map[string]string "Ошибка сервера при подсчёте стоимости"
+// @Router /cost/{user_id} [get]
 func CostSummary(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := chi.URLParam(r, "user_id")
@@ -31,22 +51,22 @@ func CostSummary(db *sql.DB) http.HandlerFunc {
 
 		// Читаем query параметры
 		service := r.URL.Query().Get("service_name")
-		startStr := r.URL.Query().Get("start")
-		endStr := r.URL.Query().Get("end")
+		startStr := r.URL.Query().Get("start_date")
+		endStr := r.URL.Query().Get("end_date")
 
 		if startStr == "" || endStr == "" {
-			http.Error(w, `{"error": "start и end обязательны. Формат: YYYY-MM"}`, http.StatusBadRequest)
+			http.Error(w, `{"error": "start_date и end_date обязательны. Формат: MM-YYYY"}`, http.StatusBadRequest)
 			return
 		}
 
-		startDate, err := time.Parse("2006-01", startStr)
+		startDate, err := time.Parse("01-2006", startStr)
 		if err != nil {
-			http.Error(w, `{"error": "Неверный формат start. Используйте YYYY-MM"}`, http.StatusBadRequest)
+			http.Error(w, `{"error": "Неверный формат start_date. Используйте MM-YYYY"}`, http.StatusBadRequest)
 			return
 		}
-		endDate, err := time.Parse("2006-01", endStr)
+		endDate, err := time.Parse("01-2006", endStr)
 		if err != nil {
-			http.Error(w, `{"error": "Неверный формат end. Используйте YYYY-MM"}`, http.StatusBadRequest)
+			http.Error(w, `{"error": "Неверный формат end_date. Используйте MM-YYYY"}`, http.StatusBadRequest)
 			return
 		}
 

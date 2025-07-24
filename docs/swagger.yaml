@@ -1,0 +1,234 @@
+basePath: /
+definitions:
+  base.Subscribe:
+    properties:
+      end_date:
+        description: Опционально дата окончания подписки
+        type: string
+      id:
+        type: integer
+      price:
+        description: Стоимость месячной подписки в рублях
+        type: integer
+      service_name:
+        description: Название сервиса, предоставляющего подписку
+        type: string
+      start_date:
+        description: Дата начала подписки (месяц и год)
+        type: string
+      user_id:
+        description: ID пользователя в формате UUID
+        type: string
+    type: object
+  handlers.CostResponse:
+    properties:
+      total:
+        description: Общая сумма стоимости подписок
+        example: 1500
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: API для управления подписками пользователя и подсчёта стоимости.
+  title: Effective Mobile Subscription API
+  version: "1.0"
+paths:
+  /cost/{user_id}:
+    get:
+      description: Возвращает сумму подписок пользователя за указанный период с возможностью
+        фильтрации по названию сервиса
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Дата начала (формат YYYY-MM)
+        in: query
+        name: start
+        required: true
+        type: string
+      - description: Дата окончания (формат YYYY-MM)
+        in: query
+        name: end
+        required: true
+        type: string
+      - description: Название сервиса (опционально)
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Общий итог по подпискам
+          schema:
+            $ref: '#/definitions/handlers.CostResponse'
+        "400":
+          description: Ошибки валидации параметров запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера при подсчёте стоимости
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Суммарная стоимость подписок
+      tags:
+      - cost
+  /subscribe:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новую подписку с указанием user_id, service_name, price
+        и start_date
+      parameters:
+      - description: Данные подписки
+        in: body
+        name: subscribe
+        required: true
+        schema:
+          $ref: '#/definitions/base.Subscribe'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ID новой подписки
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка валидации или форматирования запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "405":
+          description: Метод не разрешен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера при добавлении подписки
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Добавить подписку
+      tags:
+      - subscribes
+  /subscribe/{id}:
+    delete:
+      description: Удаляет подписку по указанному ID
+      parameters:
+      - description: ID подписки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ID удаленной подписки
+          schema:
+            additionalProperties: true
+            type: object
+        "405":
+          description: Метод не разрешен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера при удалении подписки
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить подписку по ID
+      tags:
+      - subscribes
+    get:
+      description: Возвращает подписку по уникальному ID
+      parameters:
+      - description: ID подписки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/base.Subscribe'
+        "400":
+          description: Ошибка валидации запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера при получении подписки
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить подписку по ID
+      tags:
+      - subscribes
+  /subscribes/{user_id}:
+    get:
+      description: Получить все подписки по user_id, опционально фильтруя по service_name
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Название сервиса (опционально)
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/base.Subscribe'
+            type: array
+        "400":
+          description: Ошибка валидации запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Подписки не найдены
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера при получении подписок
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить подписки пользователя
+      tags:
+      - subscribes
+schemes:
+- http
+swagger: "2.0"

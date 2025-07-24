@@ -8,11 +8,31 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
 
-// HandlerAddSubscribe обрабатывает POST-запросы для добавления подписки
+type SubscribeRequest struct {
+	UserID    string `json:"user_id"`
+	Service   string `json:"service_name"`
+	Price     int    `json:"price"`
+	StartDate string `json:"start_date"` // формат MM-YYYY
+	EndDate   string `json:"end_date"`   // формат MM-YYYY
+}
+
+// HandlerAddSubscribe добавляет новую подписку
+// @Summary Добавить подписку
+// @Description Добавляет новую подписку с указанием user_id, service_name, price и start_date
+// @Tags subscribes
+// @Accept json
+// @Produce json
+// @Param subscribe body base.Subscribe true "Данные подписки"
+// @Success 200 {object} map[string]interface{} "ID новой подписки"
+// @Failure 400 {object} map[string]string "Ошибка валидации или форматирования запроса"
+// @Failure 405 {object} map[string]string "Метод не разрешен"
+// @Failure 500 {object} map[string]string "Ошибка сервера при добавлении подписки"
+// @Router /subscribe [post]
 func HandlerAddSubscribe(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Получен запрос: %s %s", req.Method, req.URL.Path)
@@ -22,18 +42,33 @@ func HandlerAddSubscribe(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		var s base.Subscribe
-		if err := json.NewDecoder(req.Body).Decode(&s); err != nil {
+		var reqData SubscribeRequest
+		if err := json.NewDecoder(req.Body).Decode(&reqData); err != nil {
 			log.Printf("Ошибка десериализации JSON в HandlerAddSubscribe: %v", err)
 			http.Error(w, `{"error": "Ошибка десериализации JSON"}`, http.StatusBadRequest)
 			return
 		}
 
-		if err := validateSubscribeInput(s); err != nil {
+		if err := validateSubscribeInput(reqData); err != nil {
 			log.Printf("Отсутствуют обязательные поля")
 			http.Error(w, `{"error": "Отсутствуют обязательные поля: user_id, service_name, price, start_date"}`, http.StatusBadRequest)
 			return
 		}
+
+		parsedStartDate, err := time.Parse("01-2006", reqData.StartDate)
+
+		var parsedEndDate time.Time
+		if reqData.EndDate != "" {
+			parsedEndDate, err = time.Parse("01-2006", reqData.EndDate)
+		}
+		s := base.Subscribe{
+			UserID:    reqData.UserID,
+			Service:   reqData.Service,
+			Price:     reqData.Price,
+			StartDate: parsedStartDate,
+			EndDate:   parsedEndDate,
+		}
+
 		// Выполняем обновление
 		id, err := base.InsertSubscribe(db, s)
 		if err != nil {
@@ -49,7 +84,18 @@ func HandlerAddSubscribe(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// HandlerUpdateSubscribe обрабатывает PUT-запросы для редактирования подписки
+// HandlerAddSubscribe добавляет новую подписку
+// @Summary Добавить подписку
+// @Description Добавляет новую подписку с указанием user_id, service_name, price и start_date
+// @Tags subscribes
+// @Accept json
+// @Produce json
+// @Param subscribe body base.Subscribe true "Данные подписки"
+// @Success 200 {object} map[string]interface{} "ID новой подписки"
+// @Failure 400 {object} map[string]string "Ошибка валидации или форматирования запроса"
+// @Failure 405 {object} map[string]string "Метод не разрешен"
+// @Failure 500 {object} map[string]string "Ошибка сервера при добавлении подписки"
+// @Router /subscribe [post]
 func HandlerUpdateSubscribe(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Получен запрос: %s %s", req.Method, req.URL.Path)
@@ -72,23 +118,46 @@ func HandlerUpdateSubscribe(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		var s base.Subscribe
-		if err := json.NewDecoder(req.Body).Decode(&s); err != nil {
-			log.Printf("Ошибка десериализации JSON в HandlerUpdateSubscribe: %v", err)
+		var reqData SubscribeRequest
+		if err := json.NewDecoder(req.Body).Decode(&reqData); err != nil {
+			log.Printf("Ошибка десериализации JSON в HandlerAddSubscribe: %v", err)
 			http.Error(w, `{"error": "Ошибка десериализации JSON"}`, http.StatusBadRequest)
 			return
 		}
+
+		if err := validateSubscribeInput(reqData); err != nil {
+			log.Printf("Отсутствуют обязательные поля")
+			http.Error(w, `{"error": "Отсутствуют обязательные поля: user_id, service_name, price, start_date"}`, http.StatusBadRequest)
+			return
+		}
+
+		parsedStartDate, err := time.Parse("01-2006", reqData.StartDate)
+
+		var parsedEndDate time.Time
+		if reqData.EndDate != "" {
+			parsedEndDate, err = time.Parse("01-2006", reqData.EndDate)
+		}
+
+		if err := validateSubscribeInput(reqData); err != nil {
+			log.Printf("Отсутствуют обязательные поля")
+			http.Error(w, `{"error": "Отсутствуют обязательные поля: user_id, service_name, price, start_date"}`, http.StatusBadRequest)
+			return
+		}
+
+		s := base.Subscribe{
+			UserID:    reqData.UserID,
+			Service:   reqData.Service,
+			Price:     reqData.Price,
+			StartDate: parsedStartDate,
+			EndDate:   parsedEndDate,
+		}
+
 		// Принудительно устанавливаем ID из URL (игнорируем ID из тела)
 		s.ID = id
 		// Проверки
 		if s.ID == 0 {
 			log.Printf("Не указан ID подписки")
 			http.Error(w, `{"error": "Не указан ID подписки"}`, http.StatusBadRequest)
-			return
-		}
-		if err := validateSubscribeInput(s); err != nil {
-			log.Printf("Отсутствуют обязательные поля")
-			http.Error(w, `{"error": "Отсутствуют обязательные поля: user_id, service_name, price, start_date"}`, http.StatusBadRequest)
 			return
 		}
 
@@ -107,6 +176,16 @@ func HandlerUpdateSubscribe(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// HandlerDeleteSubscribe удаляет подписку по ID
+// @Summary Удалить подписку по ID
+// @Description Удаляет подписку по указанному ID
+// @Tags subscribes
+// @Produce json
+// @Param id path int true "ID подписки"
+// @Success 200 {object} map[string]interface{} "ID удаленной подписки"
+// @Failure 405 {object} map[string]string "Метод не разрешен"
+// @Failure 500 {object} map[string]string "Ошибка сервера при удалении подписки"
+// @Router /subscribe/{id} [delete]
 func HandlerDeleteSubscribe(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Получен запрос: %s %s", req.Method, req.URL.Path)
@@ -121,7 +200,7 @@ func HandlerDeleteSubscribe(db *sql.DB) http.HandlerFunc {
 		// Выполняем удаление
 		err := base.DeleteSubscribe(db, idStr)
 		if err != nil {
-			log.Printf("Ошибка при удалении подписки в InsertSubscribe: %v", err)
+			log.Printf("Ошибка при удалении подписки в DeleteSubscribe: %v", err)
 			http.Error(w, `{"error": "Не удалось удалить подписку"}`, http.StatusInternalServerError)
 			return
 		}
@@ -133,13 +212,25 @@ func HandlerDeleteSubscribe(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-func validateSubscribeInput(s base.Subscribe) error {
-	if s.UserID == "" || s.Service == "" || s.Price <= 0 || s.StartDate.IsZero() {
+func validateSubscribeInput(s SubscribeRequest) error {
+	if s.UserID == "" || s.Service == "" || s.Price <= 0 || s.StartDate == "" {
 		return errors.New("user_id, service_name, price и start_date обязательны")
 	}
 	return nil
 }
 
+// HandlerGetSubscribesByUserID возвращает список подписок пользователя (с фильтром по названию сервиса)
+// @Summary Получить подписки пользователя
+// @Description Получить все подписки по user_id, опционально фильтруя по service_name
+// @Tags subscribes
+// @Produce json
+// @Param user_id path string true "ID пользователя"
+// @Param service_name query string false "Название сервиса (опционально)"
+// @Success 200 {array} base.Subscribe
+// @Failure 400 {object} map[string]string "Ошибка валидации запроса"
+// @Failure 404 {object} map[string]string "Подписки не найдены"
+// @Failure 500 {object} map[string]string "Ошибка сервера при получении подписок"
+// @Router /subscribes/{user_id} [get]
 func HandlerGetSubscribesByUserID(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Получен запрос: %s %s", r.Method, r.URL.Path)
@@ -167,6 +258,16 @@ func HandlerGetSubscribesByUserID(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// HandlerGetSubscribeByID возвращает подписку по ID
+// @Summary Получить подписку по ID
+// @Description Возвращает подписку по уникальному ID
+// @Tags subscribes
+// @Produce json
+// @Param id path string true "ID подписки"
+// @Success 200 {object} base.Subscribe
+// @Failure 400 {object} map[string]string "Ошибка валидации запроса"
+// @Failure 500 {object} map[string]string "Ошибка сервера при получении подписки"
+// @Router /subscribe/{id} [get]
 func HandlerGetSubscribeByID(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Получен запрос: %s %s", r.Method, r.URL.Path)

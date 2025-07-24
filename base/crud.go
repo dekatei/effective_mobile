@@ -18,7 +18,7 @@ type Subscribe struct {
 func InsertSubscribe(db *sql.DB, subscribe Subscribe) (int, error) {
 	var id int
 	err := db.QueryRow(`
-		INSERT INTO subscribes (user_id, service_name, price, start_date, expiration_date)
+		INSERT INTO subscribes (user_id, service_name, price, start_date,end_date)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
 	`, subscribe.UserID, subscribe.Service, subscribe.Price, subscribe.StartDate, subscribe.EndDate).Scan(&id)
@@ -26,14 +26,14 @@ func InsertSubscribe(db *sql.DB, subscribe Subscribe) (int, error) {
 	return id, err
 }
 
-// SelectSubscribeByID позволяет получить подписки пользователя с указанием и без указания названия сервиса
+// SelectSubscribeByID позволяет получить подписку по номеру в таблице
 func SelectSubscribeByID(db *sql.DB, id string) (Subscribe, error) {
 	s := Subscribe{}
 
 	row := db.QueryRow(`
 		SELECT id, user_id, service_name, price, start_date, end_date
 		FROM subscribes 
-		WHERE user_id = $1
+		WHERE id = $1
 		`, id)
 
 	err := row.Scan(&s.ID, &s.UserID, &s.Service, &s.Price, &s.StartDate, &s.EndDate)
@@ -41,7 +41,7 @@ func SelectSubscribeByID(db *sql.DB, id string) (Subscribe, error) {
 		log.Printf("Подписка с ID=%d не найдена", id)
 		return s, err
 	} else if err != nil {
-		log.Printf("Ошибка при получении подписки с ID=%s: %v", id, err)
+		log.Printf("Ошибка при получении подписки с ID=%d: %v", id, err)
 		return s, err
 	}
 
@@ -55,7 +55,7 @@ func SelectUsersSubscribes(db *sql.DB, userID string, serviceName string) ([]Sub
 	query := `
 		SELECT id, user_id, service_name, price, start_date, end_date
 		FROM subscribes 
-		WHERE id = $1
+		WHERE user_id = $1
 	`
 	args := []interface{}{userID}
 
@@ -89,7 +89,7 @@ func SelectUsersSubscribes(db *sql.DB, userID string, serviceName string) ([]Sub
 }
 
 func DeleteSubscribe(db *sql.DB, id string) error {
-	_, err := db.Exec("DELETE FROM subscribes WHERE id = ?", id)
+	_, err := db.Exec("DELETE FROM subscribes WHERE id = $1", id)
 
 	return err
 }

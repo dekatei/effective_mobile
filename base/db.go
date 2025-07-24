@@ -11,13 +11,16 @@ import (
 
 // Создание базы данных 2ой шаг
 func CreateDB() (db *sql.DB, err error) {
-	connStr := os.Getenv("DB_CONN")
-	if connStr == "" {
-		connStr = "host=localhost port=8080 user=postgres password=postgres dbname=subscriptions sslmode=disable"
-		log.Println("Используется стандартная строка подключения (без DB_CONN)")
-	}
+	user := os.Getenv("DB_USER")
+	pass := os.Getenv("DB_PASSWORD")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	name := os.Getenv("DB_NAME")
 
-	db, err = sql.Open("postgres", connStr)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, pass, name)
+
+	db, err = sql.Open("postgres", dsn)
 	if err != nil {
 		log.Printf("Ошибка при подключении к БД: %v\n", err)
 		return nil, err
@@ -48,7 +51,7 @@ func createSubscribesTable(db *sql.DB) error {
 		service_name TEXT NOT NULL,
 		price INTEGER NOT NULL CHECK (price >= 0),
 		start_date DATE NOT NULL,
-		expiration_date DATE
+		end_date DATE
 	);`
 
 	_, err := db.Exec(query)
