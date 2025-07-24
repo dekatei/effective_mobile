@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type CostRequest struct {
@@ -19,42 +21,51 @@ type CostResponse struct {
 	Total int `json:"total"`
 }
 
-var DB *sql.DB
+func CostSummary(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := chi.URLParam(r, "user_id")
+		if userID == "" {
+			http.Error(w, `{"error": "Не указан user_id в URL"}`, http.StatusBadRequest)
+			return
+		}
 
-func CostSummary(w http.ResponseWriter, r *http.Request) {
-	var req CostRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON", http.StatusBadRequest)
-	}
-	if req.StartDate == "" || req.EndDate == "" {
-		http.Error(w, "start_date and end_date are required", http.StatusBadRequest)
-		return
-	}
+		// Читаем query параметры
+		service := r.URL.Query().Get("service_name")
+		startStr := r.URL.Query().Get("start")
+		endStr := r.URL.Query().Get("end")
 
-	startDate, err := time.Parse("2006-01", req.StartDate)
-	if err != nil {
-		http.Error(w, "invalid start_date format, use YYYY-MM", http.StatusBadRequest)
-		return
-	}
-	endDate, err := time.Parse("2006-01", req.EndDate)
-	if err != nil {
-		http.Error(w, "invalid end_date format, use YYYY-MM", http.StatusBadRequest)
-		return
-	}
+		if startStr == "" || endStr == "" {
+			http.Error(w, `{"error": "start и end обязательны. Формат: YYYY-MM"}`, http.StatusBadRequest)
+			return
+		}
 
-	filter := base.CostFilter{
-		UserID:      req.UserID,
-		ServiceName: req.ServiceName,
-		StartDate:   startDate,
-		EndDate:     endDate,
+		startDate, err := time.Parse("2006-01", startStr)
+		if err != nil {
+			http.Error(w, `{"error": "Неверный формат start. Используйте YYYY-MM"}`, http.StatusBadRequest)
+			return
+		}
+		endDate, err := time.Parse("2006-01", endStr)
+		if err != nil {
+			http.Error(w, `{"error": "Неверный формат end. Используйте YYYY-MM"}`, http.StatusBadRequest)
+			return
+		}
+
+		// Собираем фильтр
+		filter := base.CostFilter{
+			UserID:      userID,
+			ServiceName: service,
+			StartDate:   startDate,
+			EndDate:     endDate,
+		}
+
+		// Запрашиваем сумму
+		total, err := base.CountSubscriptionsCost(db, filter)
+		if err != nil {
+			http.Error(w, `{"error": "Ошибка при обращении к базе данных"}`, http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		json.NewEncoder(w).Encode(CostResponse{Total: total})
 	}
-
-	total, err := base.CountSubscriptionsCost(DB, filter)
-	if err != nil {
-		http.Error(w, "database error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(CostResponse{Total: total})
-
 }

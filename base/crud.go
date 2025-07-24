@@ -26,6 +26,28 @@ func InsertSubscribe(db *sql.DB, subscribe Subscribe) (int, error) {
 	return id, err
 }
 
+// SelectSubscribeByID позволяет получить подписки пользователя с указанием и без указания названия сервиса
+func SelectSubscribeByID(db *sql.DB, id string) (Subscribe, error) {
+	s := Subscribe{}
+
+	row := db.QueryRow(`
+		SELECT id, user_id, service_name, price, start_date, end_date
+		FROM subscribes 
+		WHERE user_id = $1
+		`, id)
+
+	err := row.Scan(&s.ID, &s.UserID, &s.Service, &s.Price, &s.StartDate, &s.EndDate)
+	if err == sql.ErrNoRows {
+		log.Printf("Подписка с ID=%d не найдена", id)
+		return s, err
+	} else if err != nil {
+		log.Printf("Ошибка при получении подписки с ID=%s: %v", id, err)
+		return s, err
+	}
+
+	return s, nil
+}
+
 // SelectUsersSubscribes позволяет получить подписки пользователя с указанием и без указания названия сервиса
 func SelectUsersSubscribes(db *sql.DB, userID string, serviceName string) ([]Subscribe, error) {
 	subscribes := []Subscribe{}
@@ -33,7 +55,7 @@ func SelectUsersSubscribes(db *sql.DB, userID string, serviceName string) ([]Sub
 	query := `
 		SELECT id, user_id, service_name, price, start_date, end_date
 		FROM subscribes 
-		WHERE user_id = $1
+		WHERE id = $1
 	`
 	args := []interface{}{userID}
 
@@ -44,7 +66,7 @@ func SelectUsersSubscribes(db *sql.DB, userID string, serviceName string) ([]Sub
 
 	rows, err := db.Query(query, args...)
 	if err != nil {
-		log.Printf("SelectUsersSubscribes: query failed: %v", err)
+		log.Printf("SelectSubscribeByID: query failed: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -53,7 +75,7 @@ func SelectUsersSubscribes(db *sql.DB, userID string, serviceName string) ([]Sub
 
 		err := rows.Scan(&s.ID, &s.UserID, &s.Service, &s.Price, &s.StartDate, &s.EndDate)
 		if err != nil {
-			log.Printf("SelectUsersSubscribes: scan failed: %v", err)
+			log.Printf("SelectSubscribeByID: scan failed: %v", err)
 			return nil, err
 		}
 		subscribes = append(subscribes, s)
@@ -66,7 +88,7 @@ func SelectUsersSubscribes(db *sql.DB, userID string, serviceName string) ([]Sub
 	return subscribes, err
 }
 
-func DeleteSubscribe(db *sql.DB, id int) error {
+func DeleteSubscribe(db *sql.DB, id string) error {
 	_, err := db.Exec("DELETE FROM subscribes WHERE id = ?", id)
 
 	return err
