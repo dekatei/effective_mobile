@@ -71,3 +71,31 @@ func DeleteSubscribe(db *sql.DB, id int) error {
 
 	return err
 }
+
+func UpdateSubscribe(db *sql.DB, subscribe Subscribe) error {
+	query := `
+		UPDATE subscribes
+		SET user_id = $1,
+		    service_name = $2,
+		    price = $3,
+		    start_date = $4,
+		    end_date = $5
+		WHERE id = $6
+	`
+	_, err := db.Exec(query,
+		subscribe.UserID,
+		subscribe.Service,
+		subscribe.Price,
+		subscribe.StartDate,
+		subscribe.EndDate,
+		subscribe.ID,
+	)
+
+	if err != nil {
+		log.Printf("UpdateSubscribe: failed to update subscription: %v", err)
+		return err
+	}
+
+	return nil
+
+}
