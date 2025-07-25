@@ -6,33 +6,34 @@ import (
 	"time"
 )
 
-type Subscribe struct {
+type Subscription struct {
 	ID        int       `json:"id"`
-	UserID    string    `json:"user_id"`            //ID пользователя в формате UUID
-	Service   string    `json:"service_name"`       //Название сервиса, предоставляющего подписку
-	Price     int       `json:"price"`              //Стоимость месячной подписки в рублях
-	StartDate time.Time `json:"start_date"`         //Дата начала подписки (месяц и год)
-	EndDate   time.Time `json:"end_date,omitempty"` //Опционально дата окончания подписки
+	UserID    string    `json:"user_id"`      //ID пользователя в формате UUID
+	Service   string    `json:"service_name"` //Название сервиса, предоставляющего подписку
+	Price     int       `json:"price"`        //Стоимость месячной подписки в рублях
+	StartDate time.Time `json:"start_date"`   //Дата начала подписки (месяц и год)
+	EndDate   time.Time `json:"end_date"`     //Дата окончания подписки
 }
 
-func InsertSubscribe(db *sql.DB, subscribe Subscribe) (int, error) {
+func InsertSubscription(db *sql.DB, subscription Subscription) (int, error) {
 	var id int
+
 	err := db.QueryRow(`
-		INSERT INTO subscribes (user_id, service_name, price, start_date,end_date)
+		INSERT INTO subscriptions (user_id, service_name, price, start_date, end_date)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
-	`, subscribe.UserID, subscribe.Service, subscribe.Price, subscribe.StartDate, subscribe.EndDate).Scan(&id)
+	`, subscription.UserID, subscription.Service, subscription.Price, subscription.StartDate, subscription.EndDate).Scan(&id)
 
 	return id, err
 }
 
-// SelectSubscribeByID позволяет получить подписку по номеру в таблице
-func SelectSubscribeByID(db *sql.DB, id string) (Subscribe, error) {
-	s := Subscribe{}
+// SelectsubscriptionByID позволяет получить подписку по номеру в таблице
+func SelectSubscriptionByID(db *sql.DB, id string) (Subscription, error) {
+	s := Subscription{}
 
 	row := db.QueryRow(`
 		SELECT id, user_id, service_name, price, start_date, end_date
-		FROM subscribes 
+		FROM subscriptions 
 		WHERE id = $1
 		`, id)
 
@@ -41,20 +42,20 @@ func SelectSubscribeByID(db *sql.DB, id string) (Subscribe, error) {
 		log.Printf("Подписка с ID=%d не найдена", id)
 		return s, err
 	} else if err != nil {
-		log.Printf("Ошибка при получении подписки с ID=%d: %v", id, err)
+		log.Printf("Ошибка при получении подписки с ID=%s: %v", id, err)
 		return s, err
 	}
 
 	return s, nil
 }
 
-// SelectUsersSubscribes позволяет получить подписки пользователя с указанием и без указания названия сервиса
-func SelectUsersSubscribes(db *sql.DB, userID string, serviceName string) ([]Subscribe, error) {
-	subscribes := []Subscribe{}
+// SelectUserssubscriptions позволяет получить подписки пользователя с указанием и без указания названия сервиса
+func SelectUsersSubscriptions(db *sql.DB, userID string, serviceName string) ([]Subscription, error) {
+	subscriptions := []Subscription{}
 
 	query := `
 		SELECT id, user_id, service_name, price, start_date, end_date
-		FROM subscribes 
+		FROM subscriptions 
 		WHERE user_id = $1
 	`
 	args := []interface{}{userID}
@@ -66,37 +67,37 @@ func SelectUsersSubscribes(db *sql.DB, userID string, serviceName string) ([]Sub
 
 	rows, err := db.Query(query, args...)
 	if err != nil {
-		log.Printf("SelectSubscribeByID: query failed: %v", err)
+		log.Printf("SelectsubscriptionByID: query failed: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		s := Subscribe{}
+		s := Subscription{}
 
 		err := rows.Scan(&s.ID, &s.UserID, &s.Service, &s.Price, &s.StartDate, &s.EndDate)
 		if err != nil {
-			log.Printf("SelectSubscribeByID: scan failed: %v", err)
+			log.Printf("SelectsubscriptionByID: scan failed: %v", err)
 			return nil, err
 		}
-		subscribes = append(subscribes, s)
+		subscriptions = append(subscriptions, s)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return subscribes, err
+	return subscriptions, err
 }
 
-func DeleteSubscribe(db *sql.DB, id string) error {
-	_, err := db.Exec("DELETE FROM subscribes WHERE id = $1", id)
+func DeleteSubscription(db *sql.DB, id string) error {
+	_, err := db.Exec("DELETE FROM subscriptions WHERE id = $1", id)
 
 	return err
 }
 
-func UpdateSubscribe(db *sql.DB, subscribe Subscribe) error {
+func UpdateSubscription(db *sql.DB, subscription Subscription) error {
 	query := `
-		UPDATE subscribes
+		UPDATE subscriptions
 		SET user_id = $1,
 		    service_name = $2,
 		    price = $3,
@@ -105,16 +106,16 @@ func UpdateSubscribe(db *sql.DB, subscribe Subscribe) error {
 		WHERE id = $6
 	`
 	_, err := db.Exec(query,
-		subscribe.UserID,
-		subscribe.Service,
-		subscribe.Price,
-		subscribe.StartDate,
-		subscribe.EndDate,
-		subscribe.ID,
+		subscription.UserID,
+		subscription.Service,
+		subscription.Price,
+		subscription.StartDate,
+		subscription.EndDate,
+		subscription.ID,
 	)
 
 	if err != nil {
-		log.Printf("UpdateSubscribe: failed to update subscription: %v", err)
+		log.Printf("Update subscription: failed to update subscription: %v", err)
 		return err
 	}
 

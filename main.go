@@ -52,12 +52,12 @@ func main() {
 	// @Tags         subscriptions
 	// @Accept       json
 	// @Produce      json
-	// @Param        subscription  body      base.Subscribe  true  "Подписка"
+	// @Param        subscription  body      base.Subscription  true  "Подписка"
 	// @Success      200           {object}  map[string]interface{}
 	// @Failure      400           {object}  map[string]string
 	// @Failure      500           {object}  map[string]string
-	// @Router       /subscribe [post]
-	r.Post("/subscribe", handlers.HandlerAddSubscribe(db))
+	// @Router       /subscription [post]
+	r.Post("/subscription", handlers.HandlerAddSubscription(db))
 
 	// @Summary      Обновить подписку по ID
 	// @Description  Обновляет подписку с указанным ID
@@ -65,12 +65,12 @@ func main() {
 	// @Accept       json
 	// @Produce      json
 	// @Param        id            path      int             true  "ID подписки"
-	// @Param        subscription  body      base.Subscribe  true  "Подписка"
+	// @Param        subscription  body      base.Subscription  true  "Подписка"
 	// @Success      200           {object}  map[string]string
 	// @Failure      400           {object}  map[string]string
 	// @Failure      500           {object}  map[string]string
-	// @Router       /subscribe/{id} [put]
-	r.Put("/subscribe/{id}", handlers.HandlerUpdateSubscribe(db))
+	// @Router       /subscription/{id} [put]
+	r.Put("/subscription/{id}", handlers.HandlerUpdateSubscription(db))
 
 	// @Summary      Удалить подписку по ID
 	// @Description  Удаляет подписку с указанным ID
@@ -80,29 +80,29 @@ func main() {
 	// @Success      200 {object} map[string]interface{}
 	// @Failure      400 {object} map[string]string
 	// @Failure      500 {object} map[string]string
-	// @Router       /subscribe/{id} [delete]
-	r.Delete("/subscribe/{id}", handlers.HandlerDeleteSubscribe(db))
+	// @Router       /subscription/{id} [delete]
+	r.Delete("/subscription/{id}", handlers.HandlerDeleteSubscription(db))
 
 	// @Summary      Получить подписку по ID
 	// @Description  Возвращает подписку по ID
 	// @Tags         subscriptions
 	// @Produce      json
 	// @Param        id  path  int  true  "ID подписки"
-	// @Success      200 {object} base.Subscribe
+	// @Success      200 {object} base.Subscription
 	// @Failure      400 {object} map[string]string
 	// @Failure      404 {object} map[string]string
-	// @Router       /subscribe/{id} [get]
-	r.Get("/subscribe/{id}", handlers.HandlerGetSubscribeByID(db))
+	// @Router       /subscription/{id} [get]
+	r.Get("/subscription/{id}", handlers.HandlerGetSubscriptionByID(db))
 
 	// @Summary      Получить подписки пользователя
 	// @Description  Возвращает все подписки пользователя по user_id
 	// @Tags         subscriptions
 	// @Produce      json
 	// @Param        user_id  path  string  true  "ID пользователя"
-	// @Success      200      {array} base.Subscribe
+	// @Success      200      {array} base.Subscription
 	// @Failure      400      {object} map[string]string
-	// @Router       /subscribes/{user_id} [get]
-	r.Get("/subscribes/{user_id}", handlers.HandlerGetSubscribesByUserID(db)) // Получить все подписки пользователя
+	// @Router       /subscriptions/{user_id} [get]
+	r.Get("/subscriptions/{user_id}", handlers.HandlerGetSubscriptionsByUserID(db)) // Получить все подписки пользователя
 
 	// @Summary      Получить суммарную стоимость подписок
 	// @Description  Возвращает сумму затрат пользователя за период (с фильтром по сервису)

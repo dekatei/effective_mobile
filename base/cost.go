@@ -15,28 +15,69 @@ type CostFilter struct {
 
 // CountSubscriptionsCost считает суммарную стоимость подписок по фильтру
 func CountSubscriptionsCost(db *sql.DB, filter CostFilter) (int, error) {
-	query := `SELECT SUM(price) FROM subscribes WHERE start_date BETWEEN $1 AND $2`
+	query := `
+        SELECT user_id, service_name, price, start_date, end_date
+        FROM subscriptions
+        WHERE (start_date <= $2) AND (end_date IS NULL OR end_date >= $1)
+    `
 	args := []interface{}{filter.StartDate, filter.EndDate}
-	argIdx := 3
 
 	if filter.UserID != "" {
-		query += fmt.Sprintf(" AND user_id = $%d", argIdx)
+		query += " AND user_id = $3"
 		args = append(args, filter.UserID)
-		argIdx++
 	}
 	if filter.ServiceName != "" {
-		query += fmt.Sprintf(" AND service_name = $%d", argIdx)
+		query += " AND service_name = $" + fmt.Sprint(len(args)+1)
 		args = append(args, filter.ServiceName)
 	}
 
-	var total sql.NullInt64
-	err := db.QueryRow(query, args...).Scan(&total)
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		return 0, err
 	}
+	defer rows.Close()
 
-	if !total.Valid {
-		return 0, nil
+	var total int
+
+	for rows.Next() {
+		var s Subscription
+		err := rows.Scan(&s.UserID, &s.Service, &s.Price, &s.StartDate, &s.EndDate)
+		if err != nil {
+			return 0, err
+		}
+
+		start := maxDate(s.StartDate, filter.StartDate)
+		end := minDate(s.EndDate, filter.EndDate)
+
+		if start.After(end) {
+			continue // подписка не активна в заданном периоде
+		}
+
+		months := countMonths(start, end)
+		total += s.Price * months
 	}
-	return int(total.Int64), nil
+
+	return total, nil
+}
+
+func maxDate(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
+}
+
+func minDate(a, b time.Time) time.Time {
+	if a.Before(b) {
+		return a
+	}
+	return b
+}
+
+// считает количество месяцев между двумя датами включительно
+func countMonths(start, end time.Time) int {
+	year1, month1 := start.Year(), int(start.Month())
+	year2, month2 := end.Year(), int(end.Month())
+
+	return (year2-year1)*12 + (month2 - month1) + 1
 }

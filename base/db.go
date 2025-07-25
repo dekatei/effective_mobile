@@ -45,7 +45,7 @@ func CreateDB() (db *sql.DB, err error) {
 // Функция создания таблицы
 func createSubscribesTable(db *sql.DB) error {
 	query := `
-	CREATE TABLE IF NOT EXISTS subscribes (
+	CREATE TABLE IF NOT EXISTS subscriptions (
 		id SERIAL PRIMARY KEY,
 		user_id UUID NOT NULL,
 		service_name TEXT NOT NULL,

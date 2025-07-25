@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: subscribesdb
+      POSTGRES_DB: subscriptionsdb
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
@@ -21,7 +21,7 @@ services:
       DB_PORT: 5432
       DB_USER: myuser
       DB_PASSWORD: mypassword
-      DB_NAME: subscribesdb
+      DB_NAME: subscriptionsdb
     ports:
       - "8080:8080"
     restart: on-failure
