@@ -1,12 +1,12 @@
-
+version: '3.9'
 services:
   db:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: subscriptionsdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: subscriptions
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
@@ -19,12 +19,13 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: myuser
-      DB_PASSWORD: mypassword
-      DB_NAME: subscriptionsdb
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: subscriptions
     ports:
       - "8080:8080"
     restart: on-failure
+    command: ["sh", "-c", "sleep 5 && /subscription_service"]
 
 volumes:
   db-data:

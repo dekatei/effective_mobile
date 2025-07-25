@@ -85,7 +85,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/subscribe": {
+        "/subscription": {
             "post": {
                 "description": "Добавляет новую подписку с указанием user_id, service_name, price и start_date",
                 "consumes": [
@@ -95,17 +95,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "subscribes"
+                    "subscriptions"
                 ],
                 "summary": "Добавить подписку",
                 "parameters": [
                     {
                         "description": "Данные подписки",
-                        "name": "subscribe",
+                        "name": "subscription",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/base.Subscribe"
+                            "$ref": "#/definitions/base.Subscription"
                         }
                     }
                 ],
@@ -147,14 +147,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/subscribe/{id}": {
+        "/subscription/{id}": {
             "get": {
                 "description": "Возвращает подписку по уникальному ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "subscribes"
+                    "subscriptions"
                 ],
                 "summary": "Получить подписку по ID",
                 "parameters": [
@@ -170,7 +170,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/base.Subscribe"
+                            "$ref": "#/definitions/base.Subscription"
                         }
                     },
                     "400": {
@@ -199,7 +199,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "subscribes"
+                    "subscriptions"
                 ],
                 "summary": "Удалить подписку по ID",
                 "parameters": [
@@ -240,14 +240,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/subscribes/{user_id}": {
+        "/subscriptions/{user_id}": {
             "get": {
                 "description": "Получить все подписки по user_id, опционально фильтруя по service_name",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "subscribes"
+                    "subscriptions"
                 ],
                 "summary": "Получить подписки пользователя",
                 "parameters": [
@@ -271,7 +271,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/base.Subscribe"
+                                "$ref": "#/definitions/base.Subscription"
                             }
                         }
                     },
@@ -307,11 +307,11 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "base.Subscribe": {
+        "base.Subscription": {
             "type": "object",
             "properties": {
                 "end_date": {
-                    "description": "Опционально дата окончания подписки",
+                    "description": "Дата окончания подписки",
                     "type": "string"
                 },
                 "id": {

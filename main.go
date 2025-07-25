@@ -64,7 +64,7 @@ func main() {
 	// @Tags         subscriptions
 	// @Accept       json
 	// @Produce      json
-	// @Param        id            path      int             true  "ID подписки"
+	// @Param        id            path      string             true  "ID подписки"
 	// @Param        subscription  body      base.Subscription  true  "Подписка"
 	// @Success      200           {object}  map[string]string
 	// @Failure      400           {object}  map[string]string
@@ -76,7 +76,7 @@ func main() {
 	// @Description  Удаляет подписку с указанным ID
 	// @Tags         subscriptions
 	// @Produce      json
-	// @Param        id  path  int  true  "ID подписки"
+	// @Param        id  path  string  true  "ID подписки"
 	// @Success      200 {object} map[string]interface{}
 	// @Failure      400 {object} map[string]string
 	// @Failure      500 {object} map[string]string
@@ -87,7 +87,7 @@ func main() {
 	// @Description  Возвращает подписку по ID
 	// @Tags         subscriptions
 	// @Produce      json
-	// @Param        id  path  int  true  "ID подписки"
+	// @Param        id  path  string  true  "ID подписки"
 	// @Success      200 {object} base.Subscription
 	// @Failure      400 {object} map[string]string
 	// @Failure      404 {object} map[string]string
